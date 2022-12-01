@@ -1,0 +1,6 @@
+{
+    "min_lift": 2,
+    "min_confidence": 0.5,
+    "transaction_file_name": "../ETL/obd_transaction.csv",
+    "output_file_name": "mba_rules.csv"
+}
