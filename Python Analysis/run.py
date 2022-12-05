@@ -15,7 +15,7 @@ df = pd.read_csv(transaction_file_name, index_col=0)
 print("transaction data loaded")
 print(df)
 
-generate_mba(df, 2, 0.5, 0.05) # df, min_lift, min_confidence, min_support
+generate_mba(df, 1.5, 0.5, 0.05) # df, min_lift, min_confidence, min_support
 # generate_recommender(df)
 
 # print("loading customer data......")
