@@ -1,2 +1,4 @@
 ETL/**
 .DS_Store
+.pyc
+Python Analysis/__pycache__/
