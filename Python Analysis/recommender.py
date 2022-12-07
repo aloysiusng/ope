@@ -17,6 +17,11 @@ def generate_recommender(df):
         logging.info("Starting recommender......")
         start = datetime.now()
 
+        logging.info("Balancing data......")
+        # make the imbalanced data more balanced by removing the products that have less than 100 transactions and the one with the most transactions
+        df = df[df['ProductCode'].isin(df['ProductCode'].value_counts()[df['ProductCode'].value_counts() > 100].index)]
+        df = df[df['ProductCode'].isin(df['ProductCode'].value_counts()[df['ProductCode'].value_counts() < 1112548].index)]
+
         logging.info("Mapping df table......")
         pivot_df = pd.pivot_table(df[['InvoiceNumber','ProductCode','BaseQty']],index = 'InvoiceNumber', columns = 'ProductCode', values = 'BaseQty', aggfunc = 'sum', fill_value = 0)
         
