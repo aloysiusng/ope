@@ -17,15 +17,6 @@ def generate_recommender(df):
         logging.info("Starting recommender......")
         start = datetime.now()
 
-        logging.info("Balancing data......")
-        # make the imbalanced data more balanced by removing the products that is not in the interquartile range
-        Q1 = df['ProductCode'].value_counts().quantile(0.25)
-        Q3 = df['ProductCode'].value_counts().quantile(0.75)
-
-        df = df[df['ProductCode'].isin(df['ProductCode'].value_counts()[df['ProductCode'].value_counts() > Q1].index)]
-        df = df[df['ProductCode'].isin(df['ProductCode'].value_counts()[df['ProductCode'].value_counts() < Q3].index)]
-
-
         logging.info("Mapping df table......")
         pivot_df = pd.pivot_table(df[['InvoiceNumber','ProductCode','BaseQty']],index = 'InvoiceNumber', columns = 'ProductCode', values = 'BaseQty', aggfunc = 'sum', fill_value = 0)
         
