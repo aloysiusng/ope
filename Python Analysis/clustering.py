@@ -73,7 +73,7 @@ def generate_clusters(customer_df, transaction_df):
     df = df.drop_duplicates(subset='CustomerCode', keep='first')
 
     # final df where all df will append to
-    final_df = pd.DataFrame(columns=['CustomerCode', 'Latitude', 'Longitude', 'cluster', 'ProductCode', 'sequence_id', 'SalesmanCode'])
+    final_df = pd.DataFrame(columns=['CustomerCode', 'Latitude', 'Longitude', 'cluster', 'ProductCode', 'sequence_id', 'SalesmanCode', 'GroupNameLevel1', 'GroupNameLevel2', 'ProductNameTH'])
     for salesman_code in df['SalesmanCode'].unique():
         salesman_code_df = df[df['SalesmanCode'] == salesman_code]
         if len(salesman_code_df) == 1:
@@ -103,7 +103,7 @@ def generate_clusters(customer_df, transaction_df):
             x_arr = []
             y_arr = []
             test_locations = {}
-            cluster_df = salesman_code_df[salesman_code_df['cluster'] == cluster_num][['CustomerCode', 'Latitude', 'Longitude', 'cluster', 'SalesmanCode']]
+            cluster_df = salesman_code_df[salesman_code_df['cluster'] == cluster_num][['CustomerCode', 'Latitude', 'Longitude', 'cluster', 'SalesmanCode', 'GroupNameLevel1', 'GroupNameLevel2', 'ProductNameTH']]
             cluster_df['ProductCode'] = clust_means_wt_dict[cluster_num]
             for i, row in cluster_df.iterrows():
                 lat, lng = float(row['Latitude']), float(row['Longitude'])

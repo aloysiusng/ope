@@ -2,3 +2,4 @@ ETL/**
 .DS_Store
 .pyc
 Python Analysis/__pycache__/
+Logger/recommender_logs
