@@ -5,6 +5,7 @@ from scipy.spatial.distance import cdist
 from scipy.optimize import linear_sum_assignment
 from delivery import DeliveryQAgent,run_n_episodes2,DeliveryEnvironment
 from sklearn.metrics.pairwise import cosine_similarity
+from collections import defaultdict
 
 def get_even_clusters(X, cluster_size):
     if len(X) <= cluster_size:
@@ -20,39 +21,31 @@ def get_even_clusters(X, cluster_size):
     return clusters
 
 def recommend(optimized_routes_df):
-    transaction = pd.read_csv("obd_transaction_clean.csv")
-    transaction.drop(["Invoice Date", "Base Qty", "Net Amount", "Discount Amount", "Unit Price", "CustomerCode", "GroupNameLevel2" ], axis = 1, inplace = True)
-    pivot_df = pd.pivot_table(transaction,index = 'Invoice Number',columns = 'ProductCode',values = 'GroupNameLevel1',aggfunc = 'count')
-    pivot_df.reset_index(inplace=True)
-    pivot_df = pivot_df.fillna(0)
-    pivot_df = pivot_df.drop('Invoice Number', axis=1)
-    co_matrix = pivot_df.T.dot(pivot_df)
-    np.fill_diagonal(co_matrix.values, 0)
-    cos_score_df = pd.DataFrame(cosine_similarity(co_matrix))
-    cos_score_df.index = co_matrix.index
-    cos_score_df.columns = np.array(co_matrix.index)
+    recommendation_df = pd.read_csv('./recommendation.csv')[['ProductInput', 'ProductCode']]
+    recommendation_dict = defaultdict(list)
+    for i in range(len(recommendation_df)):
+        product_input = recommendation_df['ProductInput'][i]
+        product_code = recommendation_df['ProductCode'][i]
+        recommendation_dict[product_input].append(product_code)
 
-    optimized_routes_df['product_reco_1'] = None
-    optimized_routes_df['product_reco_2'] = None
-    optimized_routes_df['product_reco_3'] = None
-    optimized_routes_df['product_reco_4'] = None
-    optimized_routes_df['product_reco_5'] = None
+    for i in range(10):
+        optimized_routes_df[f'product_reco_{i}'] = 0
 
     for i in range(len(optimized_routes_df)):
         product_code = optimized_routes_df['ProductCode'][i]
-        reco_1, reco_2, reco_3, reco_4, reco_5 = cos_score_df[product_code].sort_values(ascending=False).index[1:6].tolist()
-        optimized_routes_df.at[i,'product_reco_1'] = reco_1
-        optimized_routes_df.at[i,'product_reco_2'] = reco_2
-        optimized_routes_df.at[i,'product_reco_3'] = reco_3
-        optimized_routes_df.at[i,'product_reco_4'] = reco_4
-        optimized_routes_df.at[i,'product_reco_5'] = reco_5
+        for j, product_reco in enumerate(recommendation_dict[product_code]):
+            optimized_routes_df.at[i,f'product_reco_{j}'] = product_reco
     return optimized_routes_df
 
 def generate_clusters(customer_df, transaction_df):
+    product_code_dict = {}
+    for i in range(len(transaction_df)):
+        product_code = transaction_df['ProductCode'][i]
+        product_name_th = transaction_df['ProductNameTH'][i]
+        group_name_level_1 = transaction_df['GroupNameLevel1'][i]
+        group_name_level_2 = transaction_df['GroupNameLevel2'][i]
+        product_code_dict[product_code] = [product_name_th, group_name_level_1, group_name_level_2]
 
-
-    # customer_df = pd.read_csv('obd_customer_clean.csv').drop('Unnamed: 0', axis=1).drop_duplicates(subset='CustomerCode', keep='first')
-    # transaction_df = pd.read_csv('obd_transaction_clean.csv').drop_duplicates(subset=['CustomerCode', 'ProductCode'], keep='first')
     df = pd.merge(customer_df, transaction_df, on='CustomerCode')
 
     all_product_code = set(df['ProductCode'].unique())
@@ -104,7 +97,11 @@ def generate_clusters(customer_df, transaction_df):
             y_arr = []
             test_locations = {}
             cluster_df = salesman_code_df[salesman_code_df['cluster'] == cluster_num][['CustomerCode', 'Latitude', 'Longitude', 'cluster', 'SalesmanCode', 'GroupNameLevel1', 'GroupNameLevel2', 'ProductNameTH']]
-            cluster_df['ProductCode'] = clust_means_wt_dict[cluster_num]
+            common_product_code = clust_means_wt_dict[cluster_num]
+            cluster_df['ProductCode'] = common_product_code
+            # map the common productCode of the cluster to the ProductNameTH, GroupNameLevel1, GroupNameLevel2
+            product_name_th, group_name_level1, group_name_level2 = product_code_dict[common_product_code]
+            cluster_df['ProductNameTH'], cluster_df['GroupNameLevel1'], cluster_df['GroupNameLevel2'] = product_name_th, group_name_level1, group_name_level2
             for i, row in cluster_df.iterrows():
                 lat, lng = float(row['Latitude']), float(row['Longitude'])
                 test_locations[row['CustomerCode']] = (lat, lng)
@@ -129,6 +126,15 @@ def generate_clusters(customer_df, transaction_df):
             print(f"Saved {salesman_code}_cluster_{cluster_num}")
 
     final_df = recommend(final_df)
-    final_df.to_csv('../ETL/CSV/optimized_routes.csv')
+    df_dict = {'CustomerCode': [], 'Latitude': [], 'Longitude': [], 'cluster': [], 'ProductCode': [], 'sequence_id': [], 'SalesmanCode': [], 'GroupNameLevel1': [], 'GroupNameLevel2': [], 'ProductNameTH': [], 'product_reco': []}
+    for i in range(len(final_df)):
+        row = final_df.iloc[i]
+        left_row = row[:-10].to_dict()
+        for reco in row[-10:]:
+            for key in left_row:
+                df_dict[key].append(left_row[key])
+            df_dict['product_reco'].append(reco)
+    final_df = pd.DataFrame(df_dict)
+    final_df.to_csv('../ETL/CSV/optimized_routes_reco.csv')
 
 
