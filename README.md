@@ -20,6 +20,9 @@ Double click on run.bat (takes around 20 to 30mins to finsih running the script)
      - obd_visit_plan.pkl
   - bigquery.yml
   - ETL.ipynb
+- Logger
+  - mba_logs
+  - recommender_logs
 - OPE
   - EDA
     - EDA.ipynb
@@ -46,6 +49,9 @@ Double click on run.bat (takes around 20 to 30mins to finsih running the script)
 Contains ETL code which we use to fetch data from Osotspa BigQuery. Output csv files is stored here.
 
 ETL folder is outside of OPE folder (gitinit) as the csv files are too large to be pushed to GitHub
+
+## Logger Folder
+Contains log files. Log info and error when running our batch script
 
 ## EDA Folder
 Contains EDA.ipynb which we used to explore the data
